@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">snake</string>
+    <string name="highscore">High Score: 0</string>
+</resources>
