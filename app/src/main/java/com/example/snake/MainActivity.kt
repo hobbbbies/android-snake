@@ -6,10 +6,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.launch
+
 
 class MainActivity : AppCompatActivity() {
     private val gameEngine: GameEngine by viewModels()
@@ -23,16 +20,10 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-    }
 
-//    fun showScreen(screen: GameEngine.GameState) {
-//        when (screen) {
-//            GameEngine.GameState.MENU -> {
-//                // render intro screen
-//            }
-//            GameEngine.GameState.STARTED -> {
-//                // render SnakeView
-//            }
-//        }
-//    }
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.gameFragmentContainer, GameFragment())
+            .setReorderingAllowed(true)
+            .commit()
+    }
 }

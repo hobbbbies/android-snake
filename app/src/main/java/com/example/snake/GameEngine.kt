@@ -1,6 +1,7 @@
 package com.example.snake
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -10,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+private const val TAG = "GameEngine"
 class GameEngine(application: Application) : AndroidViewModel(application) {
     enum class GameScreen { MENU, STARTED }
 
@@ -18,6 +20,8 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
 
     private val _gameState = MutableStateFlow(GameState(0, 1, Direction.RIGHT, 0, 0))
     val gameState: StateFlow<GameState> = _gameState
+
+    private val gameGrid = GameGrid(GRID_SIZE)
 
     /*
     Potential danger is this would trigger a render before tick() is called. need a queue system instead
@@ -31,6 +35,7 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     var gameJob: Job? = null
 
     fun startGame() {
+        Log.i(TAG, "startGame: Starting game")
         _screen.value = GameScreen.STARTED
         if (gameJob != null) return
 
@@ -51,15 +56,17 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     private fun movePlayer() {
         _gameState.update { state ->
             when(state.direction) {
-                Direction.UP    -> state.copy(y = state.y + 1)
-                Direction.DOWN  -> state.copy(y = state.y - 1)
-                Direction.LEFT  -> state.copy(x = state.x - 1)
-                Direction.RIGHT -> state.copy(x = state.x + 1)
+                Direction.UP    -> state.copy(y = state.y + MOVE_SPEED)
+                Direction.DOWN  -> state.copy(y = state.y - MOVE_SPEED)
+                Direction.LEFT  -> state.copy(x = state.x - MOVE_SPEED)
+                Direction.RIGHT -> state.copy(x = state.x + MOVE_SPEED)
             }
         }
+        Log.i(TAG, "movePlayer: New player Object: ${gameState.value}")
     }
 
     private suspend fun tick() {
+        Log.i(TAG, "startGame: Ticking...")
         movePlayer()
         // checkWin()
         delay(500L)
