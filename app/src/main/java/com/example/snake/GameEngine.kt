@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 private const val TAG = "GameEngine"
 class GameEngine(application: Application) : AndroidViewModel(application) {
@@ -22,6 +23,8 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     val gameState: StateFlow<GameState> = _gameState
 
     private val gameGrid = GameGrid(GRID_SIZE)
+
+    private var highscore = 0
 
     /*
     Potential danger is this would trigger a render before tick() is called. need a queue system instead
@@ -51,6 +54,14 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
         _screen.value = GameScreen.MENU
         gameJob?.cancel()
         gameJob = null
+        resetState()
+    }
+
+    fun resetState() {
+        highscore = max(highscore, gameState.value.highscore)
+        _gameState.update { state ->
+            state.copy(highscore=0, snakeLen = 1, direction = Direction.RIGHT, x= 0, y=0)
+        }
     }
 
     private fun movePlayer() {
@@ -64,9 +75,28 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
         }
         Log.i(TAG, "movePlayer: New player Object: ${gameState.value}")
     }
+    // TOOD: we are detecting collisions on ALL y movements for some reason
+    private fun checkCollisionOnNextMove(): Boolean {
+        var nextX = _gameState.value.x
+        var nextY = _gameState.value.y
+        when (_gameState.value.direction) {
+            Direction.UP -> nextY++
+            Direction.DOWN -> nextY--
+            Direction.LEFT -> nextX--
+            Direction.RIGHT -> nextX++
+        }
+`        if(!gameGrid.checkCollision(nextX, nextY)) {
+            stopGame()
+            return false
+        }
+        return true
+    }
 
     private suspend fun tick() {
         Log.i(TAG, "startGame: Ticking...")
+        if (!checkCollisionOnNextMove()) {
+            return
+        }
         movePlayer()
         // checkWin()
         delay(500L)

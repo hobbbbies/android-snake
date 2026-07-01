@@ -30,8 +30,14 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val currentState = state ?: return
-        val actualX = width / currentState.x.toFloat() % width
-        val actualY = height / currentState.y.toFloat() % width
+
+        val cellWidth = width / GRID_SIZE
+        val cellHeight = height.toFloat() / GRID_SIZE
+
+        val actualX = (currentState.x * cellWidth).toFloat()
+        val actualY = (currentState.y * cellHeight).toFloat()
+
+        Log.i(TAG, "onDraw: Drawing at $actualX, $actualY")
 
         canvas.drawColor(Color.WHITE)
         canvas.drawRect(

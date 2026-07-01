@@ -48,6 +48,7 @@ class GameGrid(gridSize: Int) {
     }
 
     fun checkCollision(x: Int, y: Int): Boolean {
+        if (x >= GRID_SIZE || y >= GRID_SIZE || x < 0 || y < 0) return false
         return game_grid[x][y] != TILE
     }
 }
