@@ -19,11 +19,10 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     private val _screen = MutableStateFlow(GameScreen.MENU)
     val screen: StateFlow<GameScreen> = _screen
 
-    private val _gameState = MutableStateFlow(GameState(1, Direction.RIGHT, listOf(Point(1,1))), )
-    val gameState: StateFlow<GameState> = _gameState
-
     private val gameGrid = GameGrid(GRID_SIZE)
 
+    private val _gameState = MutableStateFlow(GameState(Direction.RIGHT, listOf(Point(1,1)), Point(5, 5))) // need to init apple after
+    val gameState: StateFlow<GameState> = _gameState
     var highscore = 0
     /*
     Potential danger is this would trigger a render before tick() is called. need a queue system instead
@@ -41,6 +40,8 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
         _screen.value = GameScreen.STARTED
         if (gameJob != null) return
 
+        spawnApple()
+
         gameJob = viewModelScope.launch {
             while (screen.value == GameScreen.STARTED) {
                 tick()
@@ -57,9 +58,9 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetState() {
-        highscore = max(highscore, gameState.value.snakeLen)
+        highscore = max(highscore, gameState.value.body.size)
         _gameState.update { state ->
-            state.copy(snakeLen = 1, direction = Direction.RIGHT, body = listOf(Point(1,1)))
+            state.copy(direction = Direction.RIGHT, body = listOf(Point(1,1)))
         }
     }
 
@@ -75,8 +76,9 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
                 Direction.RIGHT -> newX += 1
             }
             if (checkCollisionOnNextMove(newX, newY)) return
+            tryCollectApple(newX, newY, _gameState.value.apple.x, _gameState.value.apple.y)
             val newHead = Point(newX, newY)
-            val newBody = listOf(newHead) + state.body.take(state.snakeLen - 1)
+            val newBody = listOf(newHead) + state.body.take(state.body.size - 1)
             state.copy(body = newBody)
         }
         Log.i(TAG, "movePlayer: New player body: ${gameState.value.body}")
@@ -94,10 +96,35 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
         return false
     }
 
+    private fun tryCollectApple(playerX: Int, playerY: Int, appleX: Int, appleY: Int) {
+        if (playerX == appleX && playerY == appleY) eatApple()
+    }
+
+    /*
+    * Extending body means creating a new point at current x,y
+    * Functions the same as moving the snake but we don't remove the last segment
+    * */
+    private fun eatApple() {
+        Log.i(TAG, "eatApple: Increasing body length")
+        _gameState.update { state ->
+            val newSegment = Point(state.body[0].x, state.body[0].y)
+            val newBody = listOf(newSegment) + state.body
+            state.copy(body = newBody)
+        }
+        spawnApple()
+    }
+
+    private fun spawnApple() {
+        _gameState.update { state ->
+            val newApple = gameGrid.spawnApple(state.body)
+            state.copy(apple = newApple)
+        }
+    }
+
     private suspend fun tick() {
         Log.i(TAG, "startGame: Ticking...")
         movePlayer()
         // checkWin()
-        delay(500L)
+        delay(250L)
     }
 }

@@ -10,5 +10,5 @@ data class Point(val x: Int, val y: Int)
 
 typealias Body = List<Point>
 
-data class GameState(var snakeLen: Int, var direction: Direction, var body: Body, var apple: Point)
+data class GameState(var direction: Direction, var body: Body, var apple: Point)
 

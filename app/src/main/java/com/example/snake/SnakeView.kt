@@ -24,6 +24,10 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
         color = Color.BLACK
     }
 
+    private val applePaint = Paint().apply {
+        color = Color.RED
+    }
+
     private var state: GameState? = null
     private val gestureDetector = GestureDetector(context, this)
     var onDirectionChanged: ((Direction) -> Unit)? = null
@@ -40,6 +44,8 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
             Log.i(TAG, "onDraw: Drawing segment at ${segment.x}, ${segment.y}")
             drawSegment(canvas, segment.x.toFloat(), segment.y.toFloat(), cellWidth, cellHeight)
         }
+        Log.i(TAG, "onDraw: Apple Coords: ${currentState.apple.x.toFloat()}, ${currentState.apple.y.toFloat()}")
+        drawApple(canvas, currentState.apple.x.toFloat(), currentState.apple.y.toFloat(), cellWidth, cellHeight)
     }
 
     fun drawSegment(canvas: Canvas, x: Float, y: Float, cellWidth: Float, cellHeight: Float) {
@@ -51,6 +57,18 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
             actualX + cellWidth,
             actualY + cellHeight,
             squarePaint
+        )
+    }
+
+    fun drawApple(canvas: Canvas, x: Float, y: Float, cellWidth: Float, cellHeight: Float) {
+        val actualX = (x - 1) * cellWidth
+        val actualY = (y - 1) * cellHeight
+        canvas.drawRect(
+            actualX,
+            actualY,
+            actualX + cellWidth,
+            actualY + cellHeight,
+            applePaint
         )
     }
 

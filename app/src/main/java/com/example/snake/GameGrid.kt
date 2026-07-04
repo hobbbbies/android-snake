@@ -12,7 +12,7 @@ class GameGrid(gridSize: Int) {
 
     init {
         generateGrid()
-        spawnApple(listOf(Point(1,1)))
+//        spawnApple(listOf(Point(1,1)))
         printGrid()
     }
 
@@ -38,13 +38,14 @@ class GameGrid(gridSize: Int) {
         }
     }
 
-    private fun spawnApple(playerTiles: Body) {
+    fun spawnApple(playerTiles: Body): Point {
         val gridSize = game_grid.size
         val x = (1..< gridSize).random()
         val y = (1..< gridSize).random()
         Log.i(TAG, "spawnApple: $x, $y ")
         if (pointInBody(playerTiles, x, y)) return spawnApple(playerTiles)
-        game_grid[y][x] = APPLE
+        return Point(x,y)
+//        game_grid[y][x] = APPLE
     }
 
     fun checkCollision(x: Int, y: Int): Boolean {
