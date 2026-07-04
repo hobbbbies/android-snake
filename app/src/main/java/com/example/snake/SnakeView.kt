@@ -31,11 +31,12 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
         super.onDraw(canvas)
         val currentState = state ?: return
 
-        val cellWidth = width / GRID_SIZE
-        val cellHeight = height.toFloat() / GRID_SIZE
+        val cellWidth = width.toFloat() / (GRID_SIZE - 2)
+        val cellHeight = height.toFloat() / (GRID_SIZE - 2)
 
-        val actualX = (currentState.x * cellWidth).toFloat()
-        val actualY = (currentState.y * cellHeight).toFloat()
+        val actualX = (currentState.x - 1) * cellWidth
+        val actualY = (currentState.y - 1) * cellHeight
+        val apple =
 
         Log.i(TAG, "onDraw: Drawing at $actualX, $actualY")
 
@@ -43,8 +44,8 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
         canvas.drawRect(
             actualX,
             actualY,
-            actualX + squareSize,
-            actualY + squareSize,
+            actualX + cellWidth,
+            actualY + cellHeight,
             squarePaint
         )
     }
@@ -72,9 +73,9 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
             }
         } else {
             if (dy > 0) {
-                Direction.UP
-            } else {
                 Direction.DOWN
+            } else {
+                Direction.UP
             }
         }
         onDirectionChanged?.invoke(direction)

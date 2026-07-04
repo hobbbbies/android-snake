@@ -19,7 +19,7 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     private val _screen = MutableStateFlow(GameScreen.MENU)
     val screen: StateFlow<GameScreen> = _screen
 
-    private val _gameState = MutableStateFlow(GameState(0, 1, Direction.RIGHT, 0, 0))
+    private val _gameState = MutableStateFlow(GameState(0, 1, Direction.RIGHT, 1, 1))
     val gameState: StateFlow<GameState> = _gameState
 
     private val gameGrid = GameGrid(GRID_SIZE)
@@ -60,32 +60,37 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     fun resetState() {
         highscore = max(highscore, gameState.value.highscore)
         _gameState.update { state ->
-            state.copy(highscore=0, snakeLen = 1, direction = Direction.RIGHT, x= 0, y=0)
+            state.copy(highscore=0, snakeLen = 1, direction = Direction.RIGHT, x= 1, y=1)
         }
     }
 
     private fun movePlayer() {
+        // call ui move which would also check collision
         _gameState.update { state ->
             when(state.direction) {
-                Direction.UP    -> state.copy(y = state.y + MOVE_SPEED)
-                Direction.DOWN  -> state.copy(y = state.y - MOVE_SPEED)
+                Direction.UP    -> state.copy(y = state.y - MOVE_SPEED)
+                Direction.DOWN  -> state.copy(y = state.y + MOVE_SPEED)
                 Direction.LEFT  -> state.copy(x = state.x - MOVE_SPEED)
                 Direction.RIGHT -> state.copy(x = state.x + MOVE_SPEED)
             }
         }
         Log.i(TAG, "movePlayer: New player Object: ${gameState.value}")
     }
-    // TOOD: we are detecting collisions on ALL y movements for some reason
+
     private fun checkCollisionOnNextMove(): Boolean {
         var nextX = _gameState.value.x
         var nextY = _gameState.value.y
         when (_gameState.value.direction) {
-            Direction.UP -> nextY++
-            Direction.DOWN -> nextY--
+            Direction.UP -> nextY--
+            Direction.DOWN -> nextY++
             Direction.LEFT -> nextX--
             Direction.RIGHT -> nextX++
         }
-`        if(!gameGrid.checkCollision(nextX, nextY)) {
+        Log.i(TAG, "checkCollisionOnNextMove: nextX: $nextX")
+        Log.i(TAG, "checkCollisionOnNextMove: nextY: $nextY")
+        Log.i(TAG, "checkCollisionOnNextMove: Direction: ${_gameState.value.direction}")
+        if(gameGrid.checkCollision(nextX, nextY)) {
+            Log.i(TAG, "checkCollisionOnNextMove: stopping game")
             stopGame()
             return false
         }
