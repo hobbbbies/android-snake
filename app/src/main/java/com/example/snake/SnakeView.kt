@@ -10,6 +10,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import kotlin.math.abs
+import kotlin.math.log
 
 private const val TAG = "SnakeView"
 class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), GestureDetector.OnGestureListener {
@@ -34,13 +35,16 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
         val cellWidth = width.toFloat() / (GRID_SIZE - 2)
         val cellHeight = height.toFloat() / (GRID_SIZE - 2)
 
-        val actualX = (currentState.x - 1) * cellWidth
-        val actualY = (currentState.y - 1) * cellHeight
-        val apple =
-
-        Log.i(TAG, "onDraw: Drawing at $actualX, $actualY")
-
         canvas.drawColor(Color.WHITE)
+        for (segment in currentState.body) {
+            Log.i(TAG, "onDraw: Drawing segment at ${segment.x}, ${segment.y}")
+            drawSegment(canvas, segment.x.toFloat(), segment.y.toFloat(), cellWidth, cellHeight)
+        }
+    }
+
+    fun drawSegment(canvas: Canvas, x: Float, y: Float, cellWidth: Float, cellHeight: Float) {
+        val actualX = (x - 1) * cellWidth
+        val actualY = (y - 1) * cellHeight
         canvas.drawRect(
             actualX,
             actualY,
