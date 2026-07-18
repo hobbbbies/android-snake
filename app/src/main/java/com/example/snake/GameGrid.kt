@@ -38,10 +38,11 @@ class GameGrid(gridSize: Int) {
         }
     }
 
+    // TODO: Apples spawn off the screen sometimes
     fun spawnApple(playerTiles: Body): Point {
         val gridSize = game_grid.size
-        val x = (1..< gridSize).random()
-        val y = (1..< gridSize).random()
+        val x = (2..< gridSize-1).random()
+        val y = (2..< gridSize-1).random()
         Log.i(TAG, "spawnApple: $x, $y ")
         if (pointInBody(playerTiles, x, y)) return spawnApple(playerTiles)
         return Point(x,y)

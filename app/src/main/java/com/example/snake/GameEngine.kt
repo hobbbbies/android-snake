@@ -8,6 +8,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -17,19 +18,23 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     enum class GameScreen { MENU, STARTED }
 
     private val _screen = MutableStateFlow(GameScreen.MENU)
-    val screen: StateFlow<GameScreen> = _screen
+    val screen = _screen.asStateFlow()
 
     private val gameGrid = GameGrid(GRID_SIZE)
 
     private val _gameState = MutableStateFlow(GameState(Direction.RIGHT, listOf(Point(1,1)), Point(5, 5))) // need to init apple after
-    val gameState: StateFlow<GameState> = _gameState
+    val gameState = _gameState.asStateFlow()
+
+    // localState will act as the main configurer for state flow, and it will be applied to gameState on every tick()
+    private var localState: GameState = _gameState.value // starts as a shallow copy    
     var highscore = 0
-    /*
-    Potential danger is this would trigger a render before tick() is called. need a queue system instead
-     */
+
     fun changeDirection(newDirection: Direction) {
-        _gameState.update { currentState ->
-            currentState.copy(direction = newDirection)
+        when(newDirection) { // Make sure we aren't going in the opposite direction
+            Direction.UP -> if (localState.direction == Direction.DOWN) return
+            Direction.DOWN -> if (localState.direction == Direction.UP) return
+            Direction.LEFT -> if (localState.direction == Direction.RIGHT) return
+            Direction.RIGHT -> if (localState.direction == Direction.LEFT) return
         }
     }
 
@@ -45,7 +50,7 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
         gameJob = viewModelScope.launch {
             while (screen.value == GameScreen.STARTED) {
                 tick()
-                delay(500L)
+                delay(250L)
             }
         }
     }
@@ -64,24 +69,19 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun movePlayer() {
-        // call ui move which would also check collision
-        var newX = _gameState.value.body[0].x
-        var newY = _gameState.value.body[0].y
-        _gameState.update { state ->
-            when(state.direction) {
-                Direction.UP    -> newY -= 1
-                Direction.DOWN  -> newY += 1
-                Direction.LEFT  -> newX -= 1
-                Direction.RIGHT -> newX += 1
-            }
-            if (checkCollisionOnNextMove(newX, newY)) return
-            tryCollectApple(newX, newY, _gameState.value.apple.x, _gameState.value.apple.y)
-            val newHead = Point(newX, newY)
-            val newBody = listOf(newHead) + state.body.take(state.body.size - 1)
-            state.copy(body = newBody)
+    private fun moveSegments() {
+        var newX = localState.body[0].x
+        var newY = localState.body[0].y
+        when(localState.direction) {
+            Direction.UP    -> newY -= 1
+            Direction.DOWN  -> newY += 1
+            Direction.LEFT  -> newX -= 1
+            Direction.RIGHT -> newX += 1
         }
-        Log.i(TAG, "movePlayer: New player body: ${gameState.value.body}")
+        if (checkCollisionOnNextMove(newX, newY)) return
+        tryCollectApple(newX, newY, localState.apple.x, localState.apple.y)
+        val newHead = Point(newX, newY)
+        val newBody = listOf(newHead) + localState.body.take(localState.body.size - 1)
     }
 
     private fun checkCollisionOnNextMove(nextX: Int, nextY: Int): Boolean {
@@ -106,24 +106,36 @@ class GameEngine(application: Application) : AndroidViewModel(application) {
     * */
     private fun eatApple() {
         Log.i(TAG, "eatApple: Increasing body length")
-        _gameState.update { state ->
-            val newSegment = Point(state.body[0].x, state.body[0].y)
-            val newBody = listOf(newSegment) + state.body
-            state.copy(body = newBody)
-        }
+        addSegment()
+        Log.i(TAG, "eatApple: ATE APPLE. NEW BODY: ${_gameState.value.body}")
         spawnApple()
     }
 
-    private fun spawnApple() {
-        _gameState.update { state ->
-            val newApple = gameGrid.spawnApple(state.body)
-            state.copy(apple = newApple)
+    private fun addSegment() {
+        val tail = localState.body[localState.body.size-1]
+        var newX = tail.x
+        var newY = tail.y
+        when(localState.direction) { // all values reversed from movePlayer
+            Direction.UP    -> newY += 1
+            Direction.DOWN  -> newY -= 1
+            Direction.LEFT  -> newX += 1
+            Direction.RIGHT -> newX -= 1
         }
+        val newTail = Point(newX, newY)
+        val newBody = localState.body + newTail
+        localState.body = newBody
+    }
+
+    private fun spawnApple() {
+        val newApple = gameGrid.spawnApple(localState.body)
+        localState.apple = newApple
     }
 
     private suspend fun tick() {
         Log.i(TAG, "startGame: Ticking...")
-        movePlayer()
+        _gameState.update { state ->
+            state.copy(direction = localState.direction, body = localState.body, apple = localState.apple)
+        }
         // checkWin()
         delay(250L)
     }

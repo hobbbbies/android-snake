@@ -40,6 +40,7 @@ class SnakeView(context: Context, attrs: AttributeSet) : View(context, attrs), G
         val cellHeight = height.toFloat() / (GRID_SIZE - 2)
 
         canvas.drawColor(Color.WHITE)
+        Log.i(TAG, "onDraw: SNAKEBODY: ${currentState.body}")
         for (segment in currentState.body) {
             Log.i(TAG, "onDraw: Drawing segment at ${segment.x}, ${segment.y}")
             drawSegment(canvas, segment.x.toFloat(), segment.y.toFloat(), cellWidth, cellHeight)
